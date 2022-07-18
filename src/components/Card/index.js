@@ -3,6 +3,7 @@ import styles from './Card.module.scss';
 
 function Card({ name, price, imageUrl, onPlus }) {
     const [isAdded, setIsAdded] = useState(false);
+    const [isFavorite, setIsFavorite] = useState(false);
 
     const onClickPlus = () => {
         onPlus({ name, price, imageUrl });
@@ -12,7 +13,7 @@ function Card({ name, price, imageUrl, onPlus }) {
     return (
         <div className={styles.card}>
             <div className={styles.favorite}>
-                <img src="/img/heart-unliked.svg" alt="Unliked" />
+                <img src={isFavorite ? '/img/unliked.svg' : '/img/liked.svg'} alt="Heart" />
             </div>
             <img width={133} height={133} src={imageUrl} alt="Sneakers"></img>
             <h5>{name}</h5>
