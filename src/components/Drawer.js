@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
+import Info from './Info';
 
 export const Drawer = ({ onClose, onRemove, items = 0 }) => {
+    const [isOrderComplete, setIsOrderComplete] = useState(false);
+
     return (
         <div className="overlay">
             <div className="drawer">
@@ -9,11 +12,10 @@ export const Drawer = ({ onClose, onRemove, items = 0 }) => {
                 </h2>
 
                 {items.length > 0 ? (
-                    <div>
-                        {' '}
+                    <div className="d-flex flex-column flex">
                         <div className="items">
                             {items.map((obj) => (
-                                <div className="cartItem d-flex align-center mb-20">
+                                <div key={obj.id} className="cartItem d-flex align-center mb-20">
                                     <div
                                         style={{ backgroundImage: `url(${obj.imageUrl})` }}
                                         className="cartItemImg"
@@ -50,15 +52,11 @@ export const Drawer = ({ onClose, onRemove, items = 0 }) => {
                         </div>
                     </div>
                 ) : (
-                    <div class="cartEmpty d-flex align-center justify-center flex-column flex">
-                        <img width="120px" height="120px" src="/img/empty-cart.jpg" alt="Empty Cart" />
-                        <h2>Пустая корзина</h2>
-                        <p className="opacity-6">Добавьте хотя бы одну пару кроссовок, чтобы сделать заказ</p>
-                        <button onClick={onClose} className="greenButton">
-                            <img src="/img/arrow.svg" alt="Arrow" />
-                            Вернуться назад
-                        </button>
-                    </div>
+                    <Info
+                        title="Корзина пустая"
+                        description="Добавьте хотя бы одну пару кроссовок, чтобы сделать заказ"
+                        image="/img/empty-cart.jpg"
+                    />
                 )}
             </div>
         </div>

@@ -1,28 +1,45 @@
-/* eslint-disable jsx-a11y/alt-text */
-import Card from './components/Card';
 import Header from './components/Header';
 import { Drawer } from './components/Drawer';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import Home from './pages/Home';
+import { Route, Routes } from 'react-router-dom';
+import Favorites from './pages/Favorites';
+import AppContext from './context';
 
 function App() {
     const [items, setItems] = useState([]);
     const [cartItems, setCartItems] = useState([]);
+    const [favorites, setFavorites] = useState([]);
     const [searchValue, setSearchValue] = useState('');
     const [cartOpened, setCartOpened] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        axios.get('https://62d52f16d4406e523554ca5d.mockapi.io/items').then((res) => {
-            setItems(res.data);
-        });
-        axios.get('https://62d52f16d4406e523554ca5d.mockapi.io/cart').then((res) => {
-            setCartItems(res.data);
-        });
+        async function fetchData() {
+            const itemResp = await axios.get('https://62d52f16d4406e523554ca5d.mockapi.io/items');
+            const cartResp = await axios.get('https://62d52f16d4406e523554ca5d.mockapi.io/cart');
+            const favoritesResp = await axios.get('https://62d52f16d4406e523554ca5d.mockapi.io/favorites');
+
+            setIsLoading(false);
+
+            setCartItems(cartResp.data);
+            setFavorites(favoritesResp.data);
+            setItems(itemResp.data);
+        }
+        fetchData();
     }, []);
 
     const onAddToCart = (obj) => {
-        axios.post('https://62d52f16d4406e523554ca5d.mockapi.io/cart', obj);
-        setCartItems((prev) => [...cartItems, obj]);
+        try {
+            if (cartItems.find((item) => Number(item.id) === Number(obj.id))) {
+                axios.delete(`https://62d52f16d4406e523554ca5d.mockapi.io/cart/${obj.id}`);
+                setCartItems((prev) => prev.filter((item) => Number(item.id) !== Number(obj.id)));
+            } else {
+                axios.post('https://62d52f16d4406e523554ca5d.mockapi.io/cart', obj);
+                setCartItems((prev) => [...cartItems, obj]);
+            }
+        } catch (error) {}
     };
 
     const onRemoveItem = (id) => {
@@ -30,47 +47,56 @@ function App() {
         setCartItems((prev) => prev.filter((item) => item.id !== id));
     };
 
+    const onAddToFavorite = async (obj) => {
+        try {
+            if (favorites.find((favObj) => Number(favObj.id) === Number(obj.id))) {
+                axios.delete(`https://62d52f16d4406e523554ca5d.mockapi.io/favorites/${obj.id}`);
+                setFavorites((prev) => prev.filter((item) => item.id !== obj.id));
+            } else {
+                const { data } = await axios.post('https://62d52f16d4406e523554ca5d.mockapi.io/favorites', obj);
+                setFavorites((prev) => [...prev, data]);
+            }
+        } catch (error) {}
+    };
+
     const onChangeSearchInput = (event) => {
         setSearchValue(event.target.value);
     };
 
+    const isItemAdded = (id) => {
+        return cartItems.some((obj) => Number(obj.id) === Number(id));
+    };
+
     return (
-        <div className="wrapper clear">
-            {cartOpened && <Drawer items={cartItems} onClose={() => setCartOpened(false)} onRemove={onRemoveItem} />}
+        <AppContext.Provider value={{ items, cartItems, favorites, isItemAdded, onAddToFavorite, setCartOpened }}>
+            <div className="wrapper clear">
+                {cartOpened && (
+                    <Drawer items={cartItems} onClose={() => setCartOpened(false)} onRemove={onRemoveItem} />
+                )}
 
-            <Header onClickCart={() => setCartOpened(true)} />
-            <div className="content p-40">
-                <div className="d-flex align-center justify-between mb-40">
-                    <h1>{searchValue ? `Поиск по запросу: "${searchValue}"` : 'Все кроссовки'}</h1>
-                    <div className="search-block d-flex">
-                        <img src="/img/search.svg" alt="Search" />
-                        {searchValue && (
-                            <img
-                                onClick={() => setSearchValue('')}
-                                className="cu-p clear"
-                                src="/img/btn-remove.svg"
-                                alt="Close"
+                <Header onClickCart={() => setCartOpened(true)} />
+                <Routes>
+                    <Route
+                        path="/"
+                        element={
+                            <Home
+                                items={items}
+                                cartItems={cartItems}
+                                searchValue={searchValue}
+                                setSearchValue={setSearchValue}
+                                onChangeSearchInput={onChangeSearchInput}
+                                onAddToFavorite={onAddToFavorite}
+                                onAddToCart={onAddToCart}
+                                isLoading={isLoading}
                             />
-                        )}
-                        <input onChange={onChangeSearchInput} value={searchValue} placeholder="Поиск..." />
-                    </div>
-                </div>
+                        }
+                        exact
+                    />
 
-                <div className="d-flex flex-wrap">
-                    {items
-                        .filter((item) => item.name.toLowerCase().includes(searchValue))
-                        .map((item) => (
-                            <Card
-                                key={item.name}
-                                name={item.name}
-                                price={item.price}
-                                imageUrl={item.imageUrl}
-                                onPlus={(obj) => onAddToCart(obj)}
-                            />
-                        ))}
-                </div>
+                    <Route path="/favorites" element={<Favorites />} exact />
+                </Routes>
             </div>
-        </div>
+        </AppContext.Provider>
     );
 }
 
