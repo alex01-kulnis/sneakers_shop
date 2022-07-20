@@ -57,7 +57,7 @@ export const Drawer = ({ onClose, onRemove, items = [], opened }) => {
                                         onClick={() => onRemove(obj.id)}
                                         className="removeBtn"
                                         src="/img/btn-remove.svg"
-                                        alt="Remove"
+                                        alt="remove"
                                     />
                                 </div>
                             ))}
